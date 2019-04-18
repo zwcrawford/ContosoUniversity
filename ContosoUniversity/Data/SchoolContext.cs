@@ -23,6 +23,7 @@ namespace ContosoUniversity.Data
 	*/
 	public class SchoolContext : DbContext
 	{
+		// Constructor
 		public SchoolContext(DbContextOptions<SchoolContext> options) : base(options)
 		{
 		}
