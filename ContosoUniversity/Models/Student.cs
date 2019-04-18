@@ -9,7 +9,7 @@ namespace ContosoUniversity.Models
 	// By default, the Entity Framework interprets a property that's named ID or classnameID as the primary key.
 	public class Student
 	{
-		public int id { get; set; }
+		public int Id { get; set; }
 		public string LastName { get; set; }
 		public string FirstMidName { get; set; }
 		public DateTime EnrollmentDate { get; set; }

@@ -53,7 +53,7 @@ namespace ContosoUniversity.Controllers
             }
 
             var student = await _context.Students
-                .FirstOrDefaultAsync(m => m.id == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (student == null)
             {
                 return NotFound();
@@ -107,7 +107,7 @@ namespace ContosoUniversity.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("id,LastName,FirstMidName,EnrollmentDate")] Student student)
         {
-            if (id != student.id)
+            if (id != student.Id)
             {
                 return NotFound();
             }
@@ -121,7 +121,7 @@ namespace ContosoUniversity.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!StudentExists(student.id))
+                    if (!StudentExists(student.Id))
                     {
                         return NotFound();
                     }
@@ -144,7 +144,7 @@ namespace ContosoUniversity.Controllers
             }
 
             var student = await _context.Students
-                .FirstOrDefaultAsync(m => m.id == id);
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (student == null)
             {
                 return NotFound();
@@ -166,7 +166,7 @@ namespace ContosoUniversity.Controllers
 
         private bool StudentExists(int id)
         {
-            return _context.Students.Any(e => e.id == id);
+            return _context.Students.Any(e => e.Id == id);
         }
     }
 }
