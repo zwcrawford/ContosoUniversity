@@ -66,7 +66,21 @@ namespace ContosoUniversity
 			app.UseHttpsRedirection();
 			app.UseStaticFiles();
 			app.UseCookiePolicy();
+			/*
+			Route data
 
+			The key value that's passed to the Details method comes from route data. Route data is
+			data that the model binder found in a segment of the URL. For example, the default route
+			specifies controller, action, and id segments:
+			
+			template: "{controller=Home}/{action=Index}/{id?}");
+
+			In the following URL, the default route maps Instructor as the controller, Index as the
+			action, and 1 as the id; these are route data values.
+
+			http://localhost:1230/Instructor/Index/1?courseID=2021
+			
+			*/
 			app.UseMvc(routes =>
 			{
 				routes.MapRoute(

@@ -9,22 +9,22 @@ using ContosoUniversity.Data;
 using ContosoUniversity.Models;
 
 /*
-When you click Add, the Visual Studio scaffolding engine creates a StudentsController.cs file and a set
-of views (.cshtml files) that work with the controller.
+When you click Add, the Visual Studio scaffolding engine creates a StudentsController.cs file and
+set of views (.cshtml files) that work with the controller.
 
 (The scaffolding engine can also create the database context for you if you don't create it manually
-first as you did earlier for this tutorial. You can specify a new context class in the Add Controller
-box by clicking the plus sign to the right of Data context class. Visual Studio will then create your
-DbContext class as well as the controller and views.)
+first as you did earlier for this tutorial. You can specify a new context class in the Add
+Controller box by clicking the plus sign to the right of Data context class. Visual Studio will then
+create your DbContext class as well as the controller and views.)
 
 You'll notice that the controller takes a SchoolContext as a constructor parameter.
 
 ASP.NET Core dependency injection takes care of passing an instance of SchoolContext into the
 controller. You configured that in the Startup.cs file earlier.
 
-The controller contains an Index action method, which displays all students in the database. The method
-gets a list of students from the Students entity set by reading the Students property of the database
-context instance.
+The controller contains an Index action method, which displays all students in the database. The
+method gets a list of students from the Students entity set by reading the Students property of the
+database context instance.
 
  */
 namespace ContosoUniversity.Controllers
@@ -44,17 +44,39 @@ namespace ContosoUniversity.Controllers
             return View(await _context.Students.ToListAsync());
         }
 
-        // GET: Students/Details/5
-        public async Task<IActionResult> Details(int? id)
+		// GET: Students/Details/5
+
+		/*
+		The scaffolded code for the Students Index page left out the Enrollments property, because
+		that property holds a collection. In the Details page, you'll display the contents of the
+		collection in an HTML table.
+
+		In Controllers/StudentsController.cs, the action method for the Details view uses the
+		FirstOrDefaultAsync method to retrieve a single Student entity. Add code that calls
+		Include, ThenInclude, and AsNoTracking methods, as shown in the following highlighted code.
+
+		The Include and ThenInclude methods cause the context to load the Student.Enrollments
+		navigation property, and within each enrollment the Enrollment.Course navigation property.
+
+		The AsNoTracking method improves performance in scenarios where the entities returned won't
+		be updated in the current context's lifetime. You'll learn more about AsNoTracking at the
+		end of this tutorial.
+
+		 */
+		public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var student = await _context.Students
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (student == null)
+			var student = await _context.Students
+					.Include(s => s.Enrollments)
+					.ThenInclude(e => e.Course)
+					.AsNoTracking()
+					.FirstOrDefaultAsync(m => m.Id == id);
+
+			if (student == null)
             {
                 return NotFound();
             }
