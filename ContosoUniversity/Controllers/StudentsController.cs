@@ -54,47 +54,58 @@ namespace ContosoUniversity.Controllers
 		heading hyperlinks with the appropriate query string values.
 
 		*/
-		public async Task<IActionResult> Index(string sortOrder, string searchString)
-		{
-			ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
-			ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
-			ViewData["CurrentFilter"] = searchString;
-
-			var students = from s in _context.Students
-						   select s;
-			if (!String.IsNullOrEmpty(searchString))
+		public async Task<IActionResult> Index(
+		string sortOrder,
+		string currentFilter,
+		string searchString,
+		int? pageNumber)
 			{
-				students = students.Where(s => s.LastName.Contains(searchString)
-									   || s.FirstMidName.Contains(searchString));
-			}
-			switch (sortOrder)
-			{
-				case "name_desc":
-					students = students.OrderByDescending(s => s.LastName);
-					break;
-				case "Date":
-					students = students.OrderBy(s => s.EnrollmentDate);
-					break;
-				case "date_desc":
-					students = students.OrderByDescending(s => s.EnrollmentDate);
-					break;
-				default:
-					students = students.OrderBy(s => s.LastName);
-					break;
-			}
-			return View(await students.AsNoTracking().ToListAsync());
-		}
+				ViewData["CurrentSort"] = sortOrder;
+				ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+				ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
 
-		// GET: Students/Create
-		public IActionResult Create()
-        {
-            return View();
-        }
+				if (searchString != null)
+				{
+					pageNumber = 1;
+				}
+				else
+				{
+					searchString = currentFilter;
+				}
 
-        // POST: Students/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
+				ViewData["CurrentFilter"] = searchString;
+
+				var students = from s in _context.Students
+							   select s;
+				if (!String.IsNullOrEmpty(searchString))
+				{
+					students = students.Where(s => s.LastName.Contains(searchString)
+										   || s.FirstMidName.Contains(searchString));
+				}
+				switch (sortOrder)
+				{
+					case "name_desc":
+						students = students.OrderByDescending(s => s.LastName);
+						break;
+					case "Date":
+						students = students.OrderBy(s => s.EnrollmentDate);
+						break;
+					case "date_desc":
+						students = students.OrderByDescending(s => s.EnrollmentDate);
+						break;
+					default:
+						students = students.OrderBy(s => s.LastName);
+						break;
+				}
+
+				int pageSize = 3;
+				return View(await PaginatedList<Student>.CreateAsync(students.AsNoTracking(), pageNumber ?? 1, pageSize));
+			}
+
+		// POST: Students/Create
+		// To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+		// more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+		[HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
 			[Bind("EnrollmentDate,FirstMidName,LastName")] Student student)
