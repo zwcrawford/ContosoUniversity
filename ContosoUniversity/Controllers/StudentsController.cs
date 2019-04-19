@@ -38,62 +38,74 @@ namespace ContosoUniversity.Controllers
             _context = context;
         }
 
-        // GET: Students
-        public async Task<IActionResult> Index()
-        {
-            return View(await _context.Students.ToListAsync());
-        }
-
-		// GET: Students/Details/5
-
+		// GET: Students
 		/*
-		The scaffolded code for the Students Index page left out the Enrollments property, because
-		that property holds a collection. In the Details page, you'll display the contents of the
-		collection in an HTML table.
+		This code receives a sortOrder parameter from the query string in the URL. The query string value is
+		provided by ASP.NET Core MVC as a parameter to the action method. The parameter will be a string that'
+		either "Name" or "Date", optionally followed by an underscore and the string "desc" to specify
+		descending order. The default sort order is ascending.
 
-		In Controllers/StudentsController.cs, the action method for the Details view uses the
-		FirstOrDefaultAsync method to retrieve a single Student entity. Add code that calls
-		Include, ThenInclude, and AsNoTracking methods, as shown in the following highlighted code.
+		The first time the Index page is requested, there's no query string. The students are displayed in
+		ascending order by last name, which is the default as established by the fall-through case in the
+		switch statement. When the user clicks a column heading hyperlink, the appropriate sortOrder value is
+		provided in the query string.
 
-		The Include and ThenInclude methods cause the context to load the Student.Enrollments
-		navigation property, and within each enrollment the Enrollment.Course navigation property.
+		The two ViewData elements (NameSortParm and DateSortParm) are used by the view to configure the column
+		heading hyperlinks with the appropriate query string values.
 
-		The AsNoTracking method improves performance in scenarios where the entities returned won't
-		be updated in the current context's lifetime. You'll learn more about AsNoTracking at the
-		end of this tutorial.
+		*/
+		public async Task<IActionResult> Index(
+		string sortOrder,
+		string currentFilter,
+		string searchString,
+		int? pageNumber)
+			{
+				ViewData["CurrentSort"] = sortOrder;
+				ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
+				ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
 
-		 */
-		public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+				if (searchString != null)
+				{
+					pageNumber = 1;
+				}
+				else
+				{
+					searchString = currentFilter;
+				}
 
-			var student = await _context.Students
-					.Include(s => s.Enrollments)
-					.ThenInclude(e => e.Course)
-					.AsNoTracking()
-					.FirstOrDefaultAsync(m => m.Id == id);
+				ViewData["CurrentFilter"] = searchString;
 
-			if (student == null)
-            {
-                return NotFound();
-            }
+				var students = from s in _context.Students
+							   select s;
+				if (!String.IsNullOrEmpty(searchString))
+				{
+					students = students.Where(s => s.LastName.Contains(searchString)
+										   || s.FirstMidName.Contains(searchString));
+				}
+				switch (sortOrder)
+				{
+					case "name_desc":
+						students = students.OrderByDescending(s => s.LastName);
+						break;
+					case "Date":
+						students = students.OrderBy(s => s.EnrollmentDate);
+						break;
+					case "date_desc":
+						students = students.OrderByDescending(s => s.EnrollmentDate);
+						break;
+					default:
+						students = students.OrderBy(s => s.LastName);
+						break;
+				}
 
-            return View(student);
-        }
+				int pageSize = 3;
+				return View(await PaginatedList<Student>.CreateAsync(students.AsNoTracking(), pageNumber ?? 1, pageSize));
+			}
 
-        // GET: Students/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Students/Create
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
+		// POST: Students/Create
+		// To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+		// more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+		[HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
 			[Bind("EnrollmentDate,FirstMidName,LastName")] Student student)
