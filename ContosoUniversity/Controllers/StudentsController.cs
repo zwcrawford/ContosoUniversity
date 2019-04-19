@@ -199,39 +199,61 @@ namespace ContosoUniversity.Controllers
 		}
 
 		// GET: Students/Delete/5
-		public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+		public async Task<IActionResult> Delete(int? id, bool? saveChangesError = false)
+		{
+			/*
+			This code accepts an optional parameter that indicates whether the method was called after a failure t
+			save changes. This parameter is false when the HttpGet Delete method is called without a previous
+			failure. When it's called by the HttpPost Delete method in response to a database update error, the
+			parameter is true and an error message is passed to the view.
+			*/
+			if (id == null)
+			{
+				return NotFound();
+			}
 
-            var student = await _context.Students
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (student == null)
-            {
-                return NotFound();
-            }
+			var student = await _context.Students
+				.AsNoTracking()
+				.FirstOrDefaultAsync(m => m.Id == id);
+			if (student == null)
+			{
+				return NotFound();
+			}
 
-            return View(student);
-        }
+			if (saveChangesError.GetValueOrDefault())
+			{
+				ViewData["ErrorMessage"] =
+					"Delete failed. Try again, and if the problem persists " +
+					"see your system administrator.";
+			}
 
-        // POST: Students/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var student = await _context.Students.FindAsync(id);
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+			return View(student);
+		}
 
-        private bool StudentExists(int id)
-        {
-            return _context.Students.Any(e => e.Id == id);
-        }
-    }
+		// POST: Students/Delete/5
+		[HttpPost, ActionName("Delete")]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> DeleteConfirmed(int id)
+		{
+			var student = await _context.Students.FindAsync(id);
+			if (student == null)
+			{
+				return RedirectToAction(nameof(Index));
+			}
+
+			try
+			{
+				_context.Students.Remove(student);
+				await _context.SaveChangesAsync();
+				return RedirectToAction(nameof(Index));
+			}
+			catch (DbUpdateException /* ex */)
+			{
+				//Log the error (uncomment ex variable name and write a log.)
+				return RedirectToAction(nameof(Delete), new { id = id, saveChangesError = true });
+			}
+		}
+	}
 }
 /*
 Applies to:
