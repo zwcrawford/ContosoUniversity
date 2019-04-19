@@ -165,43 +165,41 @@ namespace ContosoUniversity.Controllers
             return View(student);
         }
 
-        // POST: Students/Edit/5
-        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
-        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("id,LastName,FirstMidName,EnrollmentDate")] Student student)
-        {
-            if (id != student.Id)
-            {
-                return NotFound();
-            }
+		// POST: Students/Edit/5
+		// To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+		// more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+		[HttpPost, ActionName("Edit")]
+		[ValidateAntiForgeryToken]
+		public async Task<IActionResult> EditPost(int? id)
+		{
+			if (id == null)
+			{
+				return NotFound();
+			}
+			var studentToUpdate = await _context.Students.FirstOrDefaultAsync(s => s.Id == id);
+			if (await TryUpdateModelAsync<Student>(
+				studentToUpdate,
+				"",
+				s => s.FirstMidName, s => s.LastName, s => s.EnrollmentDate))
+			{
+				try
+				{
+					await _context.SaveChangesAsync();
+					return RedirectToAction(nameof(Index));
+				}
+				catch (DbUpdateException /* ex */)
+				{
+					//Log the error (uncomment ex variable name and write a log.)
+					ModelState.AddModelError("", "Unable to save changes. " +
+						"Try again, and if the problem persists, " +
+						"see your system administrator.");
+				}
+			}
+			return View(studentToUpdate);
+		}
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(student);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!StudentExists(student.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(student);
-        }
-
-        // GET: Students/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+		// GET: Students/Delete/5
+		public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
             {
@@ -235,3 +233,30 @@ namespace ContosoUniversity.Controllers
         }
     }
 }
+/*
+Applies to:
+
+	GET: Students/Edit/5 
+	POST: Students/Edit/5
+ 
+These changes implement a security best practice to prevent overposting. The scaffolder generated a Bind attribute and
+added the entity created by the model binder to the entity set with a Modified flag. That code isn't recommended for
+many scenarios because the Bind attribute clears out any pre-existing data in fields not listed in the Include
+parameter.
+
+The new code reads the existing entity and calls TryUpdateModel to update fields in the retrieved entity based on user
+input in the posted form data. The Entity Framework's automatic change tracking sets the Modified flag on the fields
+that are changed by form input. When the SaveChanges method is called, the Entity Framework creates SQL statements to
+update the database row. Concurrency conflicts are ignored, and only the table columns that were updated by the user
+are updated in the database. (A later tutorial shows how to handle concurrency conflicts.)
+
+As a best practice to prevent overposting, the fields that you want to be updateable by the Edit page are whitelisted
+in the TryUpdateModel parameters. (The empty string preceding the list of fields in the parameter list is for a prefix
+to use with the form fields names.) Currently there are no extra fields that you're protecting, but listing the fields
+that you want the model binder to bind ensures that if you add fields to the data model in the future, they're
+automatically protected until you explicitly add them here.
+
+As a result of these changes, the method signature of the HttpPost Edit method is the same as the HttpGet Edit method;
+therefore you've renamed the method EditPost.
+
+*/
